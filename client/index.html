@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WhisperWood</title>
+    <link rel="stylesheet" href="./src/css/styles.css">
+</head>
+<body>
+    <!-- Loading screen -->
+    <div id="loading-screen">
+        <div id="loading-content">
+            <h1>WhisperWood</h1>
+            <p id="loading-text">Loading assets...</p>
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <button id="skip-loading-btn" class="hidden">Skip...</button>
+        </div>
+    </div>
+
+    <div id="ui-container">
+        <div id="login-screen" class="hidden">
+            <h1>WhisperWood</h1>
+            <input type="text" id="username-input" placeholder="Enter your name..." maxlength="15">
+            <button id="start-btn">Enter</button>
+        </div>
+
+        <div id="pause-menu" class="hidden">
+            <button id="resume-btn">Continue</button>
+            <button id="settings-btn">Settings</button>
+            <button id="author-btn">Author</button>
+        </div>
+
+        <div id="settings-modal" class="hidden">
+            <h2>Settings</h2>
+            <div class="setting-item">
+                <label>Sounds:</label>
+                <button id="toggle-sound-btn">On</button>
+            </div>
+            <div class="setting-item">
+                <label>Chat:</label>
+                <button id="toggle-chat-btn">Show</button>
+            </div>
+            <div class="setting-item">
+                <label>Сессия:</label>
+                <button id="reset-session-btn">Char reset</button>
+            </div>
+            <button id="close-settings-btn">Back</button>
+        </div>
+
+        <div id="chat-container" class="hidden">
+            <input type="text" id="chat-input" placeholder="whisper..." maxlength="50">
+        </div>
+        
+        <!-- Player counter -->
+        <div id="player-counter" class="hidden">
+            <span id="player-count">0</span> Players
+        </div>
+    </div>
+
+    <!-- Mobile contol -->
+    <div id="mobile-controls" class="hidden">
+        <div id="joystick-container">
+            <div id="joystick-base">
+                <div id="joystick-handle"></div>
+            </div>
+        </div>
+        
+        <!-- Touch area (left part of screen) -->
+        <div id="touch-camera-area"></div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script type="module" src="./src/js/main.js"></script>
+</body>
+</html>
