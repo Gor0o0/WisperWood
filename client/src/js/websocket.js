@@ -81,7 +81,7 @@ export class NetworkManager {
         });
     }
 
-    sendMovement(position, rotation) {
+    sendUpdate(position, rotation) {
         if (this.socket) {
             this.socket.emit('move', {
                 position: {
