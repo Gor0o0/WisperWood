@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/',
   build: {
     minify: false,
     sourcemap: true,
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/whisperwood.js',
@@ -18,4 +21,13 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    proxy: {
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        ws: true,
+        changeOrigin: true
+      }
+    }
+  }
 });

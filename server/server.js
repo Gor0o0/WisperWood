@@ -3,11 +3,19 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(cors());
+
+const clientDistPath = path.join(__dirname, '../client/dist');
+app.use(express.static(clientDistPath));
 
 const server = createServer(app);
 const io = new Server(server, {
@@ -68,6 +76,10 @@ io.on('connection', (socket) => {
 
         io.emit('playersUpdate', Array.from(players.values()));
     });
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 server.listen(PORT, () => {
