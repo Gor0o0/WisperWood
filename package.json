@@ -1,0 +1,19 @@
+{
+  "name": "whisperwood",
+  "version": "1.0.0",
+  "description": "mini multiplayer game with chat for college",
+  "scripts": {
+    "install:all": "node scripts/install-all.js",
+    "build": "node scripts/build.js",
+    "start": "node -e \"process.chdir('server'); require('child_process').execSync('npm start', { stdio: 'inherit' })\"",
+    "dev:client": "node -e \"process.chdir('client'); require('child_process').execSync('npm run dev', { stdio: 'inherit' })\"",
+    "dev:server": "node -e \"process.chdir('server'); require('child_process').execSync('npm run dev', { stdio: 'inherit' })\"",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "keywords": ["threejs", "socketio", "multiplayer"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

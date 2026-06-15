@@ -8,9 +8,9 @@ export class NetworkManager {
     }
 
     connect(username) {
-        const host = window.location.hostname;
+        const host = window.location.host;
         const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
-        const serverUrl = `${protocol}://${host}:3000`;
+        const serverUrl = `${protocol}://${host}`;
 
         console.log('Connecting to multiplayer server:', serverUrl);
         this.socket = io(serverUrl);
