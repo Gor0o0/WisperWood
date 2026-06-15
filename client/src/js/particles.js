@@ -17,7 +17,7 @@ export class ParticleSystem {
     }
 
     createShadowEmitter(position, sizeLevel = 1) {
-        const particleCount = this.baseParticleCount + (sizeLevel - 1) * 100; // +100 частиц за уровень
+        const particleCount = this.baseParticleCount + (sizeLevel - 1) * 50;
         const emitter = {
             points: null,
             positions: new Float32Array(particleCount * 3),
@@ -39,7 +39,7 @@ export class ParticleSystem {
         geo.setAttribute('position', new THREE.BufferAttribute(emitter.positions, 3));
         
         const emitterMaterial = this.material.clone();
-        const sizeMultiplier = 1 + (sizeLevel - 1) * 0.8; // +80% за уровень
+        const sizeMultiplier = 1 + (sizeLevel - 1) * 0.3;
         emitterMaterial.size = this.baseSize * sizeMultiplier;
         
         emitter.points = new THREE.Points(geo, emitterMaterial);
@@ -49,35 +49,29 @@ export class ParticleSystem {
     }
 
     updateEmitterSize(emitter, newSizeLevel) {
-        console.log(`[ParticleSystem] Updating emitter size to level ${newSizeLevel}`);
         emitter.sizeLevel = newSizeLevel;
-        emitter.particleCount = this.baseParticleCount + (newSizeLevel - 1) * 100; // +100 частиц за уровень
-        const sizeMultiplier = 1 + (newSizeLevel - 1) * 0.8; // +80% за уровень
+        emitter.particleCount = this.baseParticleCount + (newSizeLevel - 1) * 50;
+        const sizeMultiplier = 1 + (newSizeLevel - 1) * 0.3;
         emitter.points.material.size = this.baseSize * sizeMultiplier;
 
-        // Create new arrays for new particle count
         emitter.positions = new Float32Array(emitter.particleCount * 3);
         emitter.velocities = new Float32Array(emitter.particleCount * 3);
         emitter.lifetimes = new Float32Array(emitter.particleCount);
 
-        // Reset all particles with new size and count
         for (let i = 0; i < emitter.particleCount; i++) {
             this.resetParticle(emitter, i, true);
         }
 
-        // Update geometry
         emitter.points.geometry.dispose();
         const newGeo = new THREE.BufferGeometry();
         newGeo.setAttribute('position', new THREE.BufferAttribute(emitter.positions, 3));
         emitter.points.geometry = newGeo;
-
-        console.log(`[ParticleSystem] Size updated, multiplier: ${sizeMultiplier}, particles: ${emitter.particleCount}`);
     }
 
     resetParticle(emitter, i, initial = false) {
         const idx = i * 3;
         
-        const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.8; // +80% за уровень
+        const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.3;
         const h = Math.random() * 1.8 * sizeMultiplier;
         let x = 0, z = 0;
 
@@ -123,7 +117,7 @@ export class ParticleSystem {
             positions[idx + 1] += emitter.velocities[idx + 1];
             positions[idx + 2] += emitter.velocities[idx + 2];
 
-            const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.8;
+            const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.3;
             const hFactor = positions[idx + 1] / (1.8 * sizeMultiplier);
             if (isMoving) {
                 positions[idx] -= moveDir.x * emitter.tilt * hFactor;

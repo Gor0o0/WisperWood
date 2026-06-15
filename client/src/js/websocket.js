@@ -4,54 +4,54 @@ export class NetworkManager {
     constructor(game) {
         this.game = game;
         this.socket = null;
-        this.players = new Map();
     }
 
-    connect(user) {
-        const host = window.location.host;
-        const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
-        const serverUrl = `${protocol}://${host}`;
+    connect(userData) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.hostname;
+        const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+        
+        let serverUrl = `${protocol}//${host}${port ? `:${port}` : ''}`;
+        
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            serverUrl = 'http://localhost:3000';
+        }
 
-        console.log('Connecting to multiplayer server:', serverUrl);
         this.socket = io(serverUrl);
 
         this.socket.on('connect', () => {
-            console.log('Connected to server, my ID:', this.socket.id);
-            this.socket.emit('join', { 
-                userId: user.id, 
-                username: user.username, 
-                ticks: user.ticks, 
-                sizeLevel: user.sizeLevel, 
-                speedLevel: user.speedLevel 
-            });
+            console.log('Connected to server');
+            this.socket.emit('join', userData);
         });
 
-        this.socket.on('currentPlayers', (players) => {
-            console.log('Current players:', players);
-            this.syncPlayers(players);
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from server');
         });
 
         this.socket.on('playersUpdate', (players) => {
-            console.log('Players update:', players);
-            this.syncPlayers(players);
+            this.game.updatePlayerCountFromServer(players.length);
+            players.forEach(player => {
+                if (player.id !== this.socket.id) {
+                    this.game.addRemotePlayerToScene(player);
+                    this.game.updateRemotePlayerInScene(player);
+                }
+            });
         });
 
-        this.socket.on('newPlayer', (playerData) => {
-            console.log('New player connected:', playerData);
-            this.addRemotePlayer(playerData);
-        });
-
-        this.socket.on('playerMoved', (playerData) => {
-            if (playerData.id === this.socket.id) {
-                return;
+        this.socket.on('playerJoined', (player) => {
+            if (player.id !== this.socket.id) {
+                this.game.addRemotePlayerToScene(player);
             }
-
-            this.updateRemotePlayer(playerData);
         });
 
-        this.socket.on('playerDisconnected', (id) => {
-            console.log('Player disconnected:', id);
-            this.removeRemotePlayer(id);
+        this.socket.on('playerLeft', (id) => {
+            this.game.removeRemotePlayerFromScene(id);
+        });
+
+        this.socket.on('playerMoved', (data) => {
+            if (data.id !== this.socket.id) {
+                this.game.updateRemotePlayerInScene(data);
+            }
         });
 
         this.socket.on('chatMessage', (data) => {
@@ -59,18 +59,14 @@ export class NetworkManager {
         });
 
         this.socket.on('ticksUpdate', (ticks) => {
-            this.game.currentUser.ticks = ticks;
             this.game.updateTicks(ticks);
         });
 
         this.socket.on('upgradeSuccess', (data) => {
-            console.log('[WebSocket] Upgrade success:', data);
             if (data.type === 'size') {
-                console.log(`[Game] Upgrading size to level ${data.newLevel}`);
                 this.game.currentUser.sizeLevel = data.newLevel;
                 this.game.particleSystem.updateEmitterSize(this.game.localPlayerShadow, data.newLevel);
             } else if (data.type === 'speed') {
-                console.log(`[Game] Upgrading speed to level ${data.newLevel}`);
                 this.game.currentUser.speedLevel = data.newLevel;
                 this.game.controlsManager.speedLevel = data.newLevel;
             }
@@ -85,84 +81,28 @@ export class NetworkManager {
         });
     }
 
-    buyUpgrade(type) {
-        if (this.socket && this.socket.connected) {
-            this.socket.emit('buyUpgrade', type);
+    sendMovement(position, rotation) {
+        if (this.socket) {
+            this.socket.emit('move', {
+                position: {
+                    x: position.x,
+                    y: position.y,
+                    z: position.z
+                },
+                rotation: rotation
+            });
         }
     }
 
     sendChatMessage(message) {
-        if (this.socket && this.socket.connected) {
+        if (this.socket) {
             this.socket.emit('chatMessage', message);
         }
     }
 
-    addRemotePlayer(data) {
-        if (!this.socket || data.id === this.socket.id) {
-            return;
+    buyUpgrade(type) {
+        if (this.socket) {
+            this.socket.emit('buyUpgrade', type);
         }
-
-        if (this.players.has(data.id)) {
-            this.updateRemotePlayer(data);
-            return;
-        }
-
-        console.log(`New remote player: ${data.name}`);
-        this.players.set(data.id, data);
-        this.game.addRemotePlayerToScene(data);
-    }
-
-    updateRemotePlayer(data) {
-        if (!this.socket || data.id === this.socket.id) {
-            return;
-        }
-
-        const player = this.players.get(data.id);
-        if (!player) {
-            this.addRemotePlayer(data);
-            return;
-        }
-
-        player.position = data.position;
-        player.rotation = data.rotation;
-        this.game.updateRemotePlayerInScene(data);
-    }
-
-    removeRemotePlayer(id) {
-        console.log(`Remote player left: ${id}`);
-        this.players.delete(id);
-        this.game.removeRemotePlayerFromScene(id);
-    }
-
-    sendUpdate(position, rotation) {
-        if (this.socket && this.socket.connected) {
-            this.socket.emit('move', { position, rotation });
-        }
-    }
-
-    syncPlayers(players) {
-        if (!this.socket) {
-            return;
-        }
-
-        const remoteIds = new Set();
-
-        players.forEach((playerData) => {
-            if (playerData.id === this.socket.id) {
-                this.game.setLocalPlayerServerState(playerData);
-                return;
-            }
-
-            remoteIds.add(playerData.id);
-            this.updateRemotePlayer(playerData);
-        });
-
-        Array.from(this.players.keys()).forEach((id) => {
-            if (!remoteIds.has(id)) {
-                this.removeRemotePlayer(id);
-            }
-        });
-
-        this.game.updatePlayerCountFromServer(players.length);
     }
 }
