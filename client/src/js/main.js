@@ -20,7 +20,7 @@ class Game {
         
         this.localPlayerShadow = null;
         this.remotePlayers = new Map(); // id -> { shadow, nameLabel }
-        this.localPlayerName = '';
+        this.currentUser = null;
         
         this.startLoading();
         this.initUI();
@@ -41,6 +41,37 @@ class Game {
         }
     }
 
+    updateTicks(ticks) {
+        const ticksEl = document.getElementById('ticks-count');
+        if (ticksEl) {
+            ticksEl.textContent = ticks;
+        }
+        this.updateShopPrices();
+    }
+
+    updateShopPrices() {
+        const sizePriceEl = document.getElementById('size-price');
+        const speedPriceEl = document.getElementById('speed-price');
+        const sizeLevelEl = document.getElementById('size-level');
+        const speedLevelEl = document.getElementById('speed-level');
+        const buySizeBtn = document.getElementById('buy-size-btn');
+        const buySpeedBtn = document.getElementById('buy-speed-btn');
+
+        if (!this.currentUser) return;
+
+        const basePrice = 10;
+        const sizePrice = Math.floor(basePrice * Math.pow(1.5, this.currentUser.sizeLevel - 1));
+        const speedPrice = Math.floor(basePrice * Math.pow(1.5, this.currentUser.speedLevel - 1));
+
+        if (sizePriceEl) sizePriceEl.textContent = sizePrice;
+        if (speedPriceEl) speedPriceEl.textContent = speedPrice;
+        if (sizeLevelEl) sizeLevelEl.textContent = this.currentUser.sizeLevel;
+        if (speedLevelEl) speedLevelEl.textContent = this.currentUser.speedLevel;
+
+        if (buySizeBtn) buySizeBtn.disabled = this.currentUser.ticks < sizePrice;
+        if (buySpeedBtn) buySpeedBtn.disabled = this.currentUser.ticks < speedPrice;
+    }
+
     async startLoading() {
         const loadingScreen = document.getElementById('loading-screen');
         const progressBar = document.getElementById('progress-bar');
@@ -59,51 +90,113 @@ class Game {
         try {
             await this.modelLoader.loadDecorations(onProgress);
         } catch (e) {
-            console.warn('Load errm!, use basic models');
+            console.warn('Load errrm!, use basic models');
         }
 
-        // close load screen & logs
+        // close load screen & show auth
         loadingScreen.classList.add('hidden');
-        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
+    }
+
+    showAuthError(message) {
+        const errorEl = document.getElementById('auth-error');
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            setTimeout(() => {
+                errorEl.classList.add('hidden');
+            }, 3000);
+        }
+    }
+
+    async handleAuth(action) {
+        const username = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value;
+
+        if (!username || !password) {
+            this.showAuthError('Please enter username and password');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                this.showAuthError(data.error || 'Something went wrong');
+                return;
+            }
+
+            this.currentUser = data.user;
+            this.startGame();
+        } catch (error) {
+            console.error('Auth error:', error);
+            this.showAuthError('Connection error');
+        }
     }
 
     initUI() {
-        const startBtn = document.getElementById('start-btn');
-        const loginScreen = document.getElementById('login-screen');
-        const usernameInput = document.getElementById('username-input');
-        const chatInput = document.getElementById('chat-input');
-        
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const authUsername = document.getElementById('auth-username');
+        const authPassword = document.getElementById('auth-password');
+
+        loginBtn.addEventListener('click', () => this.handleAuth('login'));
+        registerBtn.addEventListener('click', () => this.handleAuth('register'));
+
+        [authUsername, authPassword].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleAuth('login');
+                }
+            });
+        });
+
         const resumeBtn = document.getElementById('resume-btn');
+        const shopBtn = document.getElementById('shop-btn');
         const settingsBtn = document.getElementById('settings-btn');
         const authorBtn = document.getElementById('author-btn');
-        
+        const closeShopBtn = document.getElementById('close-shop-btn');
+        const buySizeBtn = document.getElementById('buy-size-btn');
+        const buySpeedBtn = document.getElementById('buy-speed-btn');
+
         const settingsModal = document.getElementById('settings-modal');
+        const shopModal = document.getElementById('shop-modal');
         const toggleSoundBtn = document.getElementById('toggle-sound-btn');
         const toggleChatBtn = document.getElementById('toggle-chat-btn');
         const resetSessionBtn = document.getElementById('reset-session-btn');
         const closeSettingsBtn = document.getElementById('close-settings-btn');
 
-        startBtn.addEventListener('click', () => {
-            const username = usernameInput.value.trim();
-            if (username) {
-                this.localPlayerName = username;
-                loginScreen.classList.add('hidden');
-                document.getElementById('chat-container').classList.remove('hidden');
-                document.getElementById('player-counter').classList.remove('hidden');
-                this.startGame(username);
-            } else {
-                alert('Пожалуйста, введите имя');
-            }
-        });
-
-        usernameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                startBtn.click();
-            }
-        });
+        const chatInput = document.getElementById('chat-input');
 
         resumeBtn.addEventListener('click', () => this.togglePause());
         
+        shopBtn.addEventListener('click', () => {
+            document.getElementById('pause-menu').classList.add('hidden');
+            shopModal.classList.remove('hidden');
+            this.updateShopPrices();
+        });
+
+        closeShopBtn.addEventListener('click', () => {
+            shopModal.classList.add('hidden');
+            document.getElementById('pause-menu').classList.remove('hidden');
+        });
+
+        buySizeBtn.addEventListener('click', () => {
+            this.networkManager.buyUpgrade('size');
+        });
+
+        buySpeedBtn.addEventListener('click', () => {
+            this.networkManager.buyUpgrade('speed');
+        });
+
         settingsBtn.addEventListener('click', () => {
             document.getElementById('pause-menu').classList.add('hidden');
             settingsModal.classList.remove('hidden');
@@ -159,15 +252,24 @@ class Game {
         });
     }
 
-    startGame(username) {
-        console.log(`Game started for: ${username}`);
+    startGame() {
+        if (!this.currentUser) return;
+
+        console.log(`Game started for: ${this.currentUser.username}`);
         this.isRunning = true;
         
+        // Hide auth, show game UI
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('chat-container').classList.remove('hidden');
+        document.getElementById('player-counter').classList.remove('hidden');
+        document.getElementById('ticks-panel').classList.remove('hidden');
+
+        this.updateTicks(this.currentUser.ticks);
         this.soundManager.playAmbient();
         this.localPlayerShadow = this.particleSystem.createShadowEmitter(this.controlsManager.position);
         //> player count init
         this.updatePlayerCountFromServer(1);
-        this.networkManager.connect(username);
+        this.networkManager.connect(this.currentUser);
         this.requestPointerLock();
     }
 
@@ -244,7 +346,7 @@ class Game {
             new THREE.Vector3(data.position.x, data.position.y, data.position.z)
         );
 
-        //> starter pos & targetPosition
+        //> starter pos & target position
         shadowEmitter.points.position.set(data.position.x, data.position.y, data.position.z);
         shadowEmitter.targetPosition = new THREE.Vector3(data.position.x, data.position.y, data.position.z);
 
@@ -279,7 +381,7 @@ class Game {
     removeRemotePlayerFromScene(id) {
         const player = this.remotePlayers.get(id);
         if (player) {
-            console.log(`Player ${player.name} disconected`);
+            console.log(`Player ${player.name} disconnected`);
             this.particleSystem.remove(player.shadow);
             this.remotePlayers.delete(id);
             this.updatePlayerCount();
@@ -298,13 +400,15 @@ class Game {
     togglePause() {
         const pauseMenu = document.getElementById('pause-menu');
         const settingsModal = document.getElementById('settings-modal');
-        const isPaused = !pauseMenu.classList.contains('hidden') || !settingsModal.classList.contains('hidden');
+        const shopModal = document.getElementById('shop-modal');
+        const isPaused = !pauseMenu.classList.contains('hidden') || !settingsModal.classList.contains('hidden') || !shopModal.classList.contains('hidden');
         
         this.soundManager.playPop();
 
         if (isPaused) {
             pauseMenu.classList.add('hidden');
             settingsModal.classList.add('hidden');
+            shopModal.classList.add('hidden');
             this.requestPointerLock();
         } else {
             pauseMenu.classList.remove('hidden');

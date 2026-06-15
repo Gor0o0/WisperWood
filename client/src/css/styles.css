@@ -73,7 +73,7 @@ body {
     color: white;
 }
 
-#login-screen {
+#auth-screen {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -86,7 +86,7 @@ body {
     border: 1px solid #444;
 }
 
-#login-screen h1 {
+#auth-screen h1 {
     font-size: 3rem;
     margin-bottom: 1.5rem;
     letter-spacing: 0.5rem;
@@ -94,7 +94,13 @@ body {
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
-#username-input {
+.auth-error {
+    color: #ff6b6b;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+#auth-username, #auth-password {
     padding: 0.5rem 1rem;
     font-size: 1.2rem;
     background: #111;
@@ -102,9 +108,18 @@ body {
     color: white;
     margin-bottom: 1rem;
     width: 250px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-#start-btn {
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+#login-btn, #register-btn {
     padding: 0.5rem 2rem;
     font-size: 1.2rem;
     background: #333;
@@ -114,7 +129,7 @@ body {
     transition: all 0.3s ease;
 }
 
-#start-btn:hover {
+#login-btn:hover, #register-btn:hover {
     background: #444;
     color: white;
     border-color: #888;
@@ -152,7 +167,7 @@ body {
     color: white;
 }
 
-#settings-modal {
+#settings-modal, #shop-modal {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -168,30 +183,35 @@ body {
     min-width: 300px;
 }
 
-#settings-modal h2 {
+#settings-modal h2, #shop-modal h2 {
     margin: 0;
     text-align: center;
     color: #ccc;
     letter-spacing: 0.2rem;
 }
 
-.setting-item {
+.setting-item, .shop-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
 }
 
-.setting-item button {
+.setting-item button, .shop-item button {
     padding: 0.4rem 1rem;
     background: #222;
     color: #aaa;
     border: 1px solid #444;
     cursor: pointer;
-    min-width: 100px;
+    min-width: 150px;
 }
 
-#close-settings-btn {
+.shop-item button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#close-settings-btn, #close-shop-btn {
     margin-top: 1rem;
     padding: 0.6rem;
     background: #333;
@@ -255,6 +275,23 @@ body {
 #player-count {
     font-weight: bold;
     color: #4CAF50;
+}
+
+#ticks-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+#ticks-count {
+    font-weight: bold;
+    color: #FFD700;
 }
 
 #mobile-controls {

@@ -20,16 +20,35 @@
     </div>
 
     <div id="ui-container">
-        <div id="login-screen" class="hidden">
+        <div id="auth-screen">
             <h1>WhisperWood</h1>
-            <input type="text" id="username-input" placeholder="Enter your name..." maxlength="15">
-            <button id="start-btn">Enter</button>
+            <div id="auth-error" class="auth-error hidden"></div>
+            <input type="text" id="auth-username" placeholder="Username..." maxlength="15">
+            <input type="password" id="auth-password" placeholder="Password..." maxlength="30">
+            <div class="auth-buttons">
+                <button id="login-btn">Log in</button>
+                <button id="register-btn">Register</button>
+            </div>
         </div>
 
         <div id="pause-menu" class="hidden">
             <button id="resume-btn">Continue</button>
+            <button id="shop-btn">Shop</button>
             <button id="settings-btn">Settings</button>
             <button id="author-btn">Author</button>
+        </div>
+
+        <div id="shop-modal" class="hidden">
+            <h2>Shop</h2>
+            <div class="shop-item">
+                <span>+Size (Lvl <span id="size-level">1</span>)</span>
+                <button id="buy-size-btn">Buy for <span id="size-price">10</span> Ticks</button>
+            </div>
+            <div class="shop-item">
+                <span>+Speed (Lvl <span id="speed-level">1</span>)</span>
+                <button id="buy-speed-btn">Buy for <span id="speed-price">10</span> Ticks</button>
+            </div>
+            <button id="close-shop-btn">Back</button>
         </div>
 
         <div id="settings-modal" class="hidden">
@@ -56,6 +75,11 @@
         <!-- Player counter -->
         <div id="player-counter" class="hidden">
             <span id="player-count">0</span> Players
+        </div>
+
+        <!-- Ticks panel -->
+        <div id="ticks-panel" class="hidden">
+            <span id="ticks-count">0</span> Ticks
         </div>
     </div>
 

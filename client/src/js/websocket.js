@@ -7,7 +7,7 @@ export class NetworkManager {
         this.players = new Map();
     }
 
-    connect(username) {
+    connect(user) {
         const host = window.location.host;
         const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
         const serverUrl = `${protocol}://${host}`;
@@ -17,7 +17,13 @@ export class NetworkManager {
 
         this.socket.on('connect', () => {
             console.log('Connected to server, my ID:', this.socket.id);
-            this.socket.emit('join', { name: username });
+            this.socket.emit('join', { 
+                userId: user.id, 
+                username: user.username, 
+                ticks: user.ticks, 
+                sizeLevel: user.sizeLevel, 
+                speedLevel: user.speedLevel 
+            });
         });
 
         this.socket.on('currentPlayers', (players) => {
@@ -51,6 +57,34 @@ export class NetworkManager {
         this.socket.on('chatMessage', (data) => {
             this.game.showChatMessage(data.id, data.message);
         });
+
+        this.socket.on('ticksUpdate', (ticks) => {
+            this.game.currentUser.ticks = ticks;
+            this.game.updateTicks(ticks);
+        });
+
+        this.socket.on('upgradeSuccess', (data) => {
+            console.log('Upgrade success:', data);
+            if (data.type === 'size') {
+                this.game.currentUser.sizeLevel = data.newLevel;
+            } else if (data.type === 'speed') {
+                this.game.currentUser.speedLevel = data.newLevel;
+            }
+            this.game.currentUser.ticks = data.newTicks;
+            this.game.updateTicks(data.newTicks);
+            this.game.soundManager.playPop();
+        });
+
+        this.socket.on('error', (data) => {
+            console.error('Server error:', data.message);
+            alert(data.message);
+        });
+    }
+
+    buyUpgrade(type) {
+        if (this.socket && this.socket.connected) {
+            this.socket.emit('buyUpgrade', type);
+        }
     }
 
     sendChatMessage(message) {

@@ -2,15 +2,23 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Копируем package.json файлы
 COPY package*.json ./
 COPY client/package*.json ./client/
 COPY server/package*.json ./server/
+COPY scripts/ ./scripts/
 
-RUN cd client ; npm install ; cd ../server ; npm install
+# Устанавливаем зависимости корневого проекта
+RUN npm install
 
+# Устанавливаем зависимости клиента и сервера
+RUN npm run install:all
+
+# Копируем остальной код
 COPY . .
 
-RUN cd client ; npm run build
+# Собираем клиент
+RUN npm run build
 
 WORKDIR /app/server
 
