@@ -4,7 +4,7 @@ export class ParticleSystem {
     constructor(scene) {
         this.scene = scene;
         this.particles = [];
-        this.particleCount = 500;
+        this.baseParticleCount = 500;
         this.baseSize = 0.06;
         
         this.material = new THREE.PointsMaterial({
@@ -17,19 +17,21 @@ export class ParticleSystem {
     }
 
     createShadowEmitter(position, sizeLevel = 1) {
+        const particleCount = this.baseParticleCount + (sizeLevel - 1) * 100; // +100 частиц за уровень
         const emitter = {
             points: null,
-            positions: new Float32Array(this.particleCount * 3),
-            velocities: new Float32Array(this.particleCount * 3),
-            lifetimes: new Float32Array(this.particleCount),
+            positions: new Float32Array(particleCount * 3),
+            velocities: new Float32Array(particleCount * 3),
+            lifetimes: new Float32Array(particleCount),
             originalPosition: position.clone(),
             lastPosition: position.clone(),
             tilt: 0,
             bob: 0,
-            sizeLevel: sizeLevel
+            sizeLevel: sizeLevel,
+            particleCount: particleCount
         };
 
-        for (let i = 0; i < this.particleCount; i++) {
+        for (let i = 0; i < particleCount; i++) {
             this.resetParticle(emitter, i, true);
         }
 
@@ -37,7 +39,7 @@ export class ParticleSystem {
         geo.setAttribute('position', new THREE.BufferAttribute(emitter.positions, 3));
         
         const emitterMaterial = this.material.clone();
-        const sizeMultiplier = 1 + (sizeLevel - 1) * 0.5;
+        const sizeMultiplier = 1 + (sizeLevel - 1) * 0.8; // +80% за уровень
         emitterMaterial.size = this.baseSize * sizeMultiplier;
         
         emitter.points = new THREE.Points(geo, emitterMaterial);
@@ -47,21 +49,35 @@ export class ParticleSystem {
     }
 
     updateEmitterSize(emitter, newSizeLevel) {
+        console.log(`[ParticleSystem] Updating emitter size to level ${newSizeLevel}`);
         emitter.sizeLevel = newSizeLevel;
-        const sizeMultiplier = 1 + (newSizeLevel - 1) * 0.5;
+        emitter.particleCount = this.baseParticleCount + (newSizeLevel - 1) * 100; // +100 частиц за уровень
+        const sizeMultiplier = 1 + (newSizeLevel - 1) * 0.8; // +80% за уровень
         emitter.points.material.size = this.baseSize * sizeMultiplier;
-        
-        // Reset all particles with new size
-        for (let i = 0; i < this.particleCount; i++) {
+
+        // Create new arrays for new particle count
+        emitter.positions = new Float32Array(emitter.particleCount * 3);
+        emitter.velocities = new Float32Array(emitter.particleCount * 3);
+        emitter.lifetimes = new Float32Array(emitter.particleCount);
+
+        // Reset all particles with new size and count
+        for (let i = 0; i < emitter.particleCount; i++) {
             this.resetParticle(emitter, i, true);
         }
-        emitter.points.geometry.attributes.position.needsUpdate = true;
+
+        // Update geometry
+        emitter.points.geometry.dispose();
+        const newGeo = new THREE.BufferGeometry();
+        newGeo.setAttribute('position', new THREE.BufferAttribute(emitter.positions, 3));
+        emitter.points.geometry = newGeo;
+
+        console.log(`[ParticleSystem] Size updated, multiplier: ${sizeMultiplier}, particles: ${emitter.particleCount}`);
     }
 
     resetParticle(emitter, i, initial = false) {
         const idx = i * 3;
         
-        const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.5; // +50% за уровень
+        const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.8; // +80% за уровень
         const h = Math.random() * 1.8 * sizeMultiplier;
         let x = 0, z = 0;
 
@@ -100,14 +116,15 @@ export class ParticleSystem {
         const targetTilt = isMoving ? 0.2 : 0;
         emitter.tilt += (targetTilt - emitter.tilt) * 0.1;
 
-        for (let i = 0; i < this.particleCount; i++) {
+        for (let i = 0; i < emitter.particleCount; i++) {
             const idx = i * 3;
             
             positions[idx] += emitter.velocities[idx];
             positions[idx + 1] += emitter.velocities[idx + 1];
             positions[idx + 2] += emitter.velocities[idx + 2];
 
-            const hFactor = positions[idx + 1] / 1.8;
+            const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.8;
+            const hFactor = positions[idx + 1] / (1.8 * sizeMultiplier);
             if (isMoving) {
                 positions[idx] -= moveDir.x * emitter.tilt * hFactor;
                 positions[idx + 2] -= moveDir.z * emitter.tilt * hFactor;
@@ -133,5 +150,6 @@ export class ParticleSystem {
     remove(emitter) {
         this.scene.remove(emitter.points);
         emitter.points.geometry.dispose();
+        emitter.points.material.dispose();
     }
 }

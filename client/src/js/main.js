@@ -418,6 +418,10 @@ class Game {
         const player = this.remotePlayers.get(data.id);
         if (player) {
             player.shadow.targetPosition = new THREE.Vector3(data.position.x, data.position.y, data.position.z);
+            // Update size level if changed
+            if (data.sizeLevel && data.sizeLevel !== player.shadow.sizeLevel) {
+                this.particleSystem.updateEmitterSize(player.shadow, data.sizeLevel);
+            }
         }
     }
 

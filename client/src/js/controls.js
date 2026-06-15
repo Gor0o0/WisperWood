@@ -212,8 +212,9 @@ export class ControlsManager {
     }
 
     update(delta) {
-        const speedMultiplier = 1 + (this.speedLevel - 1) * 0.3; // +30% за уровень
+        const speedMultiplier = 1 + (this.speedLevel - 1) * 0.5; // +50% за уровень
         const speed = this.baseSpeed * speedMultiplier * delta;
+        console.log(`[Controls] Speed level: ${this.speedLevel}, speed: ${speed.toFixed(3)}`);
         const velocity = new THREE.Vector3();
 
         //> keyboard

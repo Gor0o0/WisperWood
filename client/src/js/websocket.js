@@ -64,11 +64,13 @@ export class NetworkManager {
         });
 
         this.socket.on('upgradeSuccess', (data) => {
-            console.log('Upgrade success:', data);
+            console.log('[WebSocket] Upgrade success:', data);
             if (data.type === 'size') {
+                console.log(`[Game] Upgrading size to level ${data.newLevel}`);
                 this.game.currentUser.sizeLevel = data.newLevel;
                 this.game.particleSystem.updateEmitterSize(this.game.localPlayerShadow, data.newLevel);
             } else if (data.type === 'speed') {
+                console.log(`[Game] Upgrading speed to level ${data.newLevel}`);
                 this.game.currentUser.speedLevel = data.newLevel;
                 this.game.controlsManager.speedLevel = data.newLevel;
             }
