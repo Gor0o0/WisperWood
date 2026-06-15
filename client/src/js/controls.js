@@ -30,6 +30,10 @@ export class ControlsManager {
         this.distance = 5;
         this.height = 1.5;
 
+        //> Player stats
+        this.speedLevel = 1;
+        this.baseSpeed = 5.0;
+
         //> if mobile/../../
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -208,7 +212,8 @@ export class ControlsManager {
     }
 
     update(delta) {
-        const speed = 5.0 * delta;
+        const speedMultiplier = 1 + (this.speedLevel - 1) * 0.3; // +30% за уровень
+        const speed = this.baseSpeed * speedMultiplier * delta;
         const velocity = new THREE.Vector3();
 
         //> keyboard

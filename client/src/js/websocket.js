@@ -67,8 +67,10 @@ export class NetworkManager {
             console.log('Upgrade success:', data);
             if (data.type === 'size') {
                 this.game.currentUser.sizeLevel = data.newLevel;
+                this.game.particleSystem.updateEmitterSize(this.game.localPlayerShadow, data.newLevel);
             } else if (data.type === 'speed') {
                 this.game.currentUser.speedLevel = data.newLevel;
+                this.game.controlsManager.speedLevel = data.newLevel;
             }
             this.game.currentUser.ticks = data.newTicks;
             this.game.updateTicks(data.newTicks);

@@ -135,33 +135,33 @@ io.on('connection', (socket) => {
     let tickInterval = null;
 
     socket.on('join', async (userData) => {
-        try {
-            const { userId, username, ticks, sizeLevel, speedLevel } = userData;
+            try {
+                const { userId, username, ticks, sizeLevel, speedLevel } = userData;
 
-            if (!userId || !username) {
-                socket.emit('error', { message: 'Unauthorized' });
-                return;
-            }
+                if (!userId || !username) {
+                    socket.emit('error', { message: 'Unauthorized' });
+                    return;
+                }
 
-            // Сохраняем сессию
-            userSessions.set(socket.id, { userId, username, ticks, sizeLevel, speedLevel });
+                // Save session
+                userSessions.set(socket.id, { userId, username, ticks, sizeLevel, speedLevel });
 
-            // Спавн
-            const spawnRadius = 5;
-            const angle = Math.random() * Math.PI * 2;
-            const x = Math.cos(angle) * spawnRadius;
-            const z = Math.sin(angle) * spawnRadius;
+                // Spawn
+                const spawnRadius = 5;
+                const angle = Math.random() * Math.PI * 2;
+                const x = Math.cos(angle) * spawnRadius;
+                const z = Math.sin(angle) * spawnRadius;
 
-            players.set(socket.id, {
-                id: socket.id,
-                userId,
-                name: username,
-                position: { x, y: 0, z },
-                rotation: 0,
-                sizeLevel,
-                speedLevel,
-                ticks
-            });
+                players.set(socket.id, {
+                    id: socket.id,
+                    userId,
+                    name: username,
+                    position: { x, y: 0, z },
+                    rotation: 0,
+                    sizeLevel: sizeLevel || 1,
+                    speedLevel: speedLevel || 1,
+                    ticks
+                });
 
             console.log(`Игрок ${username} подключен, позиция: (${x}, 0, ${z})`);
 

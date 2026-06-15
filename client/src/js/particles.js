@@ -5,17 +5,18 @@ export class ParticleSystem {
         this.scene = scene;
         this.particles = [];
         this.particleCount = 500;
+        this.baseSize = 0.06;
         
         this.material = new THREE.PointsMaterial({
             color: 0x000000,
-            size: 0.06,
+            size: this.baseSize,
             transparent: true,
             opacity: 0.8,
             blending: THREE.NormalBlending
         });
     }
 
-    createShadowEmitter(position) {
+    createShadowEmitter(position, sizeLevel = 1) {
         const emitter = {
             points: null,
             positions: new Float32Array(this.particleCount * 3),
@@ -24,7 +25,8 @@ export class ParticleSystem {
             originalPosition: position.clone(),
             lastPosition: position.clone(),
             tilt: 0,
-            bob: 0
+            bob: 0,
+            sizeLevel: sizeLevel
         };
 
         for (let i = 0; i < this.particleCount; i++) {
@@ -34,31 +36,48 @@ export class ParticleSystem {
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(emitter.positions, 3));
         
-        emitter.points = new THREE.Points(geo, this.material);
+        const emitterMaterial = this.material.clone();
+        const sizeMultiplier = 1 + (sizeLevel - 1) * 0.5;
+        emitterMaterial.size = this.baseSize * sizeMultiplier;
+        
+        emitter.points = new THREE.Points(geo, emitterMaterial);
         this.scene.add(emitter.points);
         
         return emitter;
     }
 
+    updateEmitterSize(emitter, newSizeLevel) {
+        emitter.sizeLevel = newSizeLevel;
+        const sizeMultiplier = 1 + (newSizeLevel - 1) * 0.5;
+        emitter.points.material.size = this.baseSize * sizeMultiplier;
+        
+        // Reset all particles with new size
+        for (let i = 0; i < this.particleCount; i++) {
+            this.resetParticle(emitter, i, true);
+        }
+        emitter.points.geometry.attributes.position.needsUpdate = true;
+    }
+
     resetParticle(emitter, i, initial = false) {
         const idx = i * 3;
         
-        const h = Math.random() * 1.8;
+        const sizeMultiplier = 1 + (emitter.sizeLevel - 1) * 0.5; // +50% за уровень
+        const h = Math.random() * 1.8 * sizeMultiplier;
         let x = 0, z = 0;
 
-        if (h < 0.5) {
+        if (h < 0.5 * sizeMultiplier) {
             const side = Math.random() > 0.5 ? 0.12 : -0.12;
-            x = side + (Math.random() - 0.5) * 0.12;
-            z = (Math.random() - 0.5) * 0.12;
-        } else if (h > 1.2 && h < 1.5) {
-            x = (Math.random() - 0.5) * 0.55;
-            z = (Math.random() - 0.5) * 0.2;
-        } else if (h >= 1.5) {
-            x = (Math.random() - 0.5) * 0.22;
-            z = (Math.random() - 0.5) * 0.22;
+            x = (side + (Math.random() - 0.5) * 0.12) * sizeMultiplier;
+            z = ((Math.random() - 0.5) * 0.12) * sizeMultiplier;
+        } else if (h > 1.2 * sizeMultiplier && h < 1.5 * sizeMultiplier) {
+            x = ((Math.random() - 0.5) * 0.55) * sizeMultiplier;
+            z = ((Math.random() - 0.5) * 0.2) * sizeMultiplier;
+        } else if (h >= 1.5 * sizeMultiplier) {
+            x = ((Math.random() - 0.5) * 0.22) * sizeMultiplier;
+            z = ((Math.random() - 0.5) * 0.22) * sizeMultiplier;
         } else {
-            x = (Math.random() - 0.5) * 0.35;
-            z = (Math.random() - 0.5) * 0.22;
+            x = ((Math.random() - 0.5) * 0.35) * sizeMultiplier;
+            z = ((Math.random() - 0.5) * 0.22) * sizeMultiplier;
         }
 
         emitter.positions[idx] = x;

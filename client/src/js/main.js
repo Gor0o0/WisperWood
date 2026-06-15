@@ -297,9 +297,12 @@ class Game {
         document.getElementById('ticks-panel').classList.remove('hidden');
         document.getElementById('controls-hint').classList.remove('hidden');
 
+        // Apply initial player stats
+        this.controlsManager.speedLevel = this.currentUser.speedLevel;
+
         this.updateTicks(this.currentUser.ticks);
         this.soundManager.playAmbient();
-        this.localPlayerShadow = this.particleSystem.createShadowEmitter(this.controlsManager.position);
+        this.localPlayerShadow = this.particleSystem.createShadowEmitter(this.controlsManager.position, this.currentUser.sizeLevel);
         //> player count init
         this.updatePlayerCountFromServer(1);
         this.networkManager.connect(this.currentUser);
@@ -382,7 +385,8 @@ class Game {
 
         console.log(`addRemotePlayerToScene: add player ${data.name}, pos:`, data.position);
         const shadowEmitter = this.particleSystem.createShadowEmitter(
-            new THREE.Vector3(data.position.x, data.position.y, data.position.z)
+            new THREE.Vector3(data.position.x, data.position.y, data.position.z),
+            data.sizeLevel || 1
         );
 
         //> starter pos & target position
