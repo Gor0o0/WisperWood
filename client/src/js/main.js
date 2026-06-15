@@ -243,11 +243,43 @@ class Game {
                     this.requestPointerLock();
                 }
             }
+            if (e.key === 'Escape') {
+                chatInput.blur();
+                this.requestPointerLock();
+            }
         });
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isRunning) {
                 this.togglePause();
+            }
+            if (e.key === 'Shift' && this.isRunning) {
+                const isLocked = document.pointerLockElement === this.sceneManager.renderer.domElement;
+                if (isLocked) {
+                    document.exitPointerLock();
+                } else {
+                    const pauseMenu = document.getElementById('pause-menu');
+                    const settingsModal = document.getElementById('settings-modal');
+                    const shopModal = document.getElementById('shop-modal');
+                    const isPaused = !pauseMenu.classList.contains('hidden') || !settingsModal.classList.contains('hidden') || !shopModal.classList.contains('hidden');
+                    if (!isPaused) {
+                        this.requestPointerLock();
+                    }
+                }
+            }
+            if (e.key === '/' && this.isRunning) {
+                e.preventDefault();
+                const pauseMenu = document.getElementById('pause-menu');
+                const settingsModal = document.getElementById('settings-modal');
+                const shopModal = document.getElementById('shop-modal');
+                const isPaused = !pauseMenu.classList.contains('hidden') || !settingsModal.classList.contains('hidden') || !shopModal.classList.contains('hidden');
+                if (!isPaused) {
+                    document.exitPointerLock();
+                    setTimeout(() => {
+                        chatInput.focus();
+                        chatInput.value = '';
+                    }, 100);
+                }
             }
         });
     }
@@ -263,6 +295,7 @@ class Game {
         document.getElementById('chat-container').classList.remove('hidden');
         document.getElementById('player-counter').classList.remove('hidden');
         document.getElementById('ticks-panel').classList.remove('hidden');
+        document.getElementById('controls-hint').classList.remove('hidden');
 
         this.updateTicks(this.currentUser.ticks);
         this.soundManager.playAmbient();
@@ -271,6 +304,12 @@ class Game {
         this.updatePlayerCountFromServer(1);
         this.networkManager.connect(this.currentUser);
         this.requestPointerLock();
+
+        // Listen for pointer lock changes
+        document.addEventListener('pointerlockchange', () => {
+            const isLocked = document.pointerLockElement === this.sceneManager.renderer.domElement;
+            // If game is running but paused, don't do anything
+        }, false);
     }
 
     setLocalPlayerServerState(data) {
@@ -406,12 +445,16 @@ class Game {
         this.soundManager.playPop();
 
         if (isPaused) {
+            // Resume
             pauseMenu.classList.add('hidden');
             settingsModal.classList.add('hidden');
             shopModal.classList.add('hidden');
-            this.requestPointerLock();
+            // Don't auto-lock on resume, just keep it unlocked
         } else {
+            // Pause
             pauseMenu.classList.remove('hidden');
+            settingsModal.classList.add('hidden');
+            shopModal.classList.add('hidden');
             if (document.exitPointerLock) {
                 document.exitPointerLock();
             }
